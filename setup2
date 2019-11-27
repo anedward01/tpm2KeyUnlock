@@ -1,0 +1,24 @@
+# !/bin/bash
+
+chmod +x 755 tpm2Hook
+cp tpm2Hook /etc/initramfs-tools/hooks/tpm2
+chmod +x 755 /etc/initramfs-tools/hooks/tpm2
+cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2
+chmod +x 755 /usr/share/initramfs-tools/hooks/tpm2
+
+mkdir ~/Documents/tpm-manager
+cd ~/Documents/tpm-manager
+
+dd if=/dev/urandom of=secret.bin bs=32 count=1
+
+chmod 0400 secret.bin
+cp secret.bin /root/secret.bin
+chmod 0400 /root/secret.bin
+
+tpm2_clear
+tpm2_pcrread sha1:0,2,3,7 -o pcrs.bin
+tpm2_createpolicy --policy-pcr -l sha1:0,2,3,7 -f pcrs.bin --policy policy.digest
+tpm2_createprimary -c primary.context
+tpm2_create -u obj.pub -r obj.priv -C primary.context -L policy.digest --attributes "noda|adminwithpolicy|fixedparent|fixedtpm" -i secret.bin
+tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
+tpm2_evictcontrol -c load.context
