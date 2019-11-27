@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+echo "Unlocking via TPM" >&2
+export TPM2TOOLS_TCTI="device:/dev/tpm0"
+echo "TPM Call Success" >&2
+/usr/local/bin/tpm2_unseal -c 0x81000000 --auth pcr:sha1:0,2,3,7
+echo "Called tpm2_unseal" >&2 
+if [ $? -eq 0 ]; then
+	exit
+fi
+/lib/cryptsetup/askpass "Unlocking the disk fallback $CRYPTTAB_SOURCE ($CRYPTTAB_NAME)\nEnter passphrase: "
+
