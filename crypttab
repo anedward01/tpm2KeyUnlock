@@ -1,0 +1,1 @@
+sda3_crypt UUID=411d6aa2-00ac-4479-8a03-6f85dc202955 /dev/sda3/ /root/secret.bin luks,discard,keyscript=/usr/local/bin/passphrase-from-tpm
