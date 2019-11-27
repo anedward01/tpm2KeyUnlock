@@ -11,6 +11,8 @@ cd ~/Documents/tpm-manager
 
 dd if=/dev/urandom of=secret.bin bs=32 count=1
 
+cryptsetup luksAddKey secret.bin
+
 chmod 0400 secret.bin
 cp secret.bin /root/secret.bin
 chmod 0400 /root/secret.bin
