@@ -1,5 +1,7 @@
-# !/bin/bash
-cd ~/Documents/bootChain
+#!/usr/bin/env bash
+
+cd /usr/local/var/bootChain || exit 1
+
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
 	--add-section .cmdline=cmdline.txt --change-section-vma .cmdline=0x30000 \

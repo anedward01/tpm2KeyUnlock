@@ -1,21 +1,26 @@
-# !/bin/bash
+#!/usr/bin/env bash
 
-chmod +x 755 tpm2Hook
+if [ "${EUID}" -gt 0 ]; then
+	echo "Please run as root"
+	exit 1
+fi
+
+chmod 0755 tpm2Hook
 cp tpm2Hook /etc/initramfs-tools/hooks/tpm2
-chmod +x 755 /etc/initramfs-tools/hooks/tpm2
+chmod 0755 /etc/initramfs-tools/hooks/tpm2
 cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2
-chmod +x 755 /usr/share/initramfs-tools/hooks/tpm2
+chmod 0755 /usr/share/initramfs-tools/hooks/tpm2
+chown 0:0 /etc/initramfs-tools/hooks/tpm2 /usr/share/initramfs-tools/hooks/tpm2
 
-mkdir ~/Documents/tpm-manager
-cd ~/Documents/tpm-manager
+mkdir -p /usr/local/var/tpm-manager || exit 1
+chmod 0500 /usr/local/var/tpm-manager || exit 1
+chown 0:0 /usr/local/var/tpm-manager || exit 1
+cd /usr/local/var/tpm-manager || exit 1
 
-dd if=/dev/urandom of=secret.bin bs=32 count=1
-
-cryptsetup luksAddKey secret.bin
-
+touch secret.bin
 chmod 0400 secret.bin
-cp secret.bin /root/secret.bin
-chmod 0400 /root/secret.bin
+dd if=/dev/urandom of=secret.bin bs=32 count=1 conv=sync
+cryptsetup luksAddKey secret.bin
 
 tpm2_clear
 tpm2_pcrread sha1:0,2,3,7 -o pcrs.bin

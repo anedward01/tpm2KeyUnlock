@@ -1,62 +1,121 @@
-sudo apt -y install \
-  autoconf-archive \
-  libcmocka0 \
-  libcmocka-dev \
-  build-essential \
-  git \
-  pkg-config \
-  gcc \
-  g++ \
-  m4 \
-  libtool \
-  automake \
-  autoconf \
-  libdbus-glib-1-dev \
-  libssl-dev \
-  glib2.0 \
-  cmake \
-  libssl-dev \
-  libcurl4-gnutls-dev \
-  doxygen \
-  efitools
+#!/usr/bin/env bash
 
-cd ~/Downloads
+if [ "${EUID}" -gt 0 ]; then
+	echo "Run as root (with sudo, su, ssh, etc...)" >&2
+	exit 1
+fi
+
+PACKAGES=( 'autoconf-archive' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'glib2.0' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' )
+
+for pkg in "${PACKAGES[@]}";do
+	if ! dpkg -l "${pkg}" | grep '^ii '; then
+		if ! apt install -y "${pkg}"; then
+			echo "Error installing ${pkg}" >&2
+			exit 1
+		fi
+	fi
+done
+
+cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
 git clone https://github.com/tpm2-software/tpm2-abrmd.git
 git clone https://github.com/tpm2-software/tpm2-tools.git
-cd tpm2-tss
+
+cd /usr/local/src/tpm2-tss || exit 1
 ./bootstrap
 ./configure --with-udevrulesdir=/etc/udev/rules.d
-make
-make install
-cd ~/Downloads
-sudo useradd --system --user-group tss
-cd tpm2-abrmd
+if make; then
+	if ! make install; then
+		echo "Unable to install tpm2-tss" >&2
+		exit 1
+	fi
+else
+	echo "Unable to build tpm2-tss" >&2
+	exit 1
+fi
+
+if id tss;then
+	echo "User rss already exists, please check user details"
+else
+	useradd --system --user-group tss
+fi
+
+cd /usr/local/src/tpm2-abrmd || exit 1
 ./bootstrap
 ./configure --with-dbuspolicydir=/etc/dbus-1/system.d --with-systemdsystemunitdir=/lib/systemd/system
-make
-make install
-cd ~/Downloads
-sudo udevadm control --reload-rules && sudo udevadm trigger
-sudo pkill -HUP dbus-daemon
-sudo systemctl daemon-reload
-sudo ldconfig
-sudo systemctl enable tpm2-abrmd
-sudo service tpm2-abrmd start
+if make; then
+	if ! make install; then
+		echo "Unable to install tpm2-abrmd" >&2
+		exit 1
+	fi
+else
+	echo "Unable to build tpm2-abrmd" >&2
+	exit 1
+fi
+
+udevadm control --reload-rules && udevadm trigger
+pkill -HUP dbus-daemon
+systemctl daemon-reload
+ldconfig
+systemctl enable tpm2-abrmd
+service tpm2-abrmd start
 systemctl status tpm2-abrmd.service
-cd tpm2-tools
+
+cd /usr/local/src/tpm2-tools || exit 1
 ./bootstrap
 ./bootstrap
 ./bootstrap
 ./configure
 make
 make install
+if make; then
+	if ! make install; then
+		echo "Unable to install tpm2-tools" >&2
+		exit 1
+	fi
+else
+	echo "Unable to build tpm2-tools" >&2
+	exit 1
+fi
 
-mkdir ~/Documents/bootChain
-cd ~/Documents/bootChain
+source /etc/profile
+for command in uuidgen openssl cert-to-efi-sig-list sign-efi-sig-list objcopy sbsign;do
+	if ! command -v "${command}"; then
+		echo "Unable to find ${command}, bailing out!" >&1
+		exit 1
+	fi
+done
+
+echo "Linux kernels seen:"
+ls -ltr /boot/vmlinuz*
+
+linux="$( ls -t /boot/vmlinuz* | head -n 1 )"
+initrd="$( sed -e 's#vmlinuz#initrd\.img#g' <<< "${linux}" )"
+if ! [ -e "${initrd}" ]; then
+	echo -n "Unable to find InitRD guess of ${initrd}"
+	initrd="$( ls -t /boot/initrd* | head -n 1  )"
+	echo " using ${initrd} instead"
+fi
+echo -e "Installing for:\n\tkernel:\t${linux}\n\tInitRD:\t${initrd}"
+cont=''
+while [ "${cont}" != 'yes' ]; do
+	echo 'Continue? Enter "yes" to continue or Ctrl+C to break.'
+	read -p '>' cont
+done
+for file in /usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOTX64.EFI /etc/os-release;do
+	if [ ! -e "${file}" ];then
+		echo -e "Unable to find ${file}." >&2
+		exit 1
+	fi
+done
+mkdir -p /usr/local/var/bootChain || exit 1
+cd /usr/local/var/bootChain || exit 1
+
+if [ ! -e GUID.txt ]; then
+	uuidgen --random > GUID.txt
+fi
 
 #Create Platform Key
-uuidgen --random > GUID.txt
 openssl req -newkey rsa:2048 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=my Platform Key/" -out PK.crt
 openssl x509 -outform DER -in PK.crt -out PK.cer
 cert-to-efi-sig-list -g "$(< GUID.txt)" PK.crt PK.esl
@@ -76,22 +135,24 @@ sign-efi-sig-list -g "$(< GUID.txt)" -k KEK.key -c KEK.crt db db.esl db.auth
 
 touch cmdline.txt
 
+
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
 	--add-section .cmdline=cmdline.txt --change-section-vma .cmdline=0x30000 \
-	--add-section .linux="/boot/vmlinuz-5.0.0-36-generic" --change-section-vma .linux=0x40000 \
-	--add-section .initrd="/boot/initrd.img-5.0.0-36-generic" --change-section-vma .initrd=0x3000000 \
+	--add-section .linux="${linux}" --change-section-vma .linux=0x40000 \
+	--add-section .initrd="${initrd}" --change-section-vma .initrd=0x3000000 \
 	/usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOTX64.EFI
 sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOTX64.EFI /boot/efi/EFI/BOOT/BOOTX64.EFI
 
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
 	--add-section .cmdline=cmdline.txt --change-section-vma .cmdline=0x30000 \
-	--add-section .linux="/boot/vmlinuz-5.0.0-36-generic" --change-section-vma .linux=0x40000 \
-	--add-section .initrd="/boot/initrd.img-5.0.0-36-generic" --change-section-vma .initrd=0x3000000 \
+	--add-section .linux="${linux}" --change-section-vma .linux=0x40000 \
+	--add-section .initrd="${initrd}" --change-section-vma .initrd=0x3000000 \
 	/usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOT_RECX64.EFI
+
 sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOT_RECX64.EFI /boot/efi/EFI/BOOT/BOOT_RECX64.EFI
 
-echo "restart your computer"
-
+echo "TPM2 boot enabled, please restart." >> /var/run/reboot-required
+cat /var/run/reboot-required
 
