@@ -13,6 +13,6 @@ The setup of TPM unlocking involves three phases. The first phase installs the T
 - Patience. Quite a bit of it.
 
 # Current issues
-- The scripts `setup` and `setup2` are designed for my convenience, but can be used on any linux system. A few commands are missing from them that I need to add in.
-- For now, I recommend using only the `Manual Install` directions. I recorded the steps as I recreated them, and so far they work fine for me. If any issues come about, I'll help out as best I can.
-- The `passphrase-from-tpm` currently does not allow fallback password entry. I could not figure it out and I currently don't have time since school break ended.
+- [IN PROGRESS] The scripts `setup` and `setup2` are designed for my convenience, but can be used on any linux system. A few commands are missing from them that I need to add in. For now, I recommend using only the `Manual Install` directions. I recorded the steps as I recreated them, and so far they work fine for me. If any issues come about, I'll help out as best I can.
+
+- [FIXED] The `passphrase-from-tpm` currently does not allow fallback password entry. I could not figure it out and I currently don't have time since school break ended.
