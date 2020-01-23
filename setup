@@ -5,7 +5,7 @@ if [ "${EUID}" -gt 0 ]; then
 	exit 1
 fi
 
-PACKAGES=( 'autoconf-archive' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'glib2.0' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' )
+PACKAGES=( 'autoconf-archive' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'glib2.0' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' 'libjson-c-dev' )
 
 for pkg in "${PACKAGES[@]}";do
 	if ! dpkg -l "${pkg}" | grep '^ii '; then
