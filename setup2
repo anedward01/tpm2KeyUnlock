@@ -20,7 +20,18 @@ cd /usr/local/var/tpm-manager || exit 1
 touch secret.bin
 chmod 0400 secret.bin
 dd if=/dev/urandom of=secret.bin bs=32 count=1 conv=sync
-cryptsetup luksAddKey secret.bin
+
+drive=''
+echo 'Enter drive name. Default is /dev/sda3* *(It still needs to be typed in)'
+read -p '>' drive
+cryptsetup luksAddKey $drive secret.bin
+
+luks=''
+echo 'Enter the LUKS partition name. Default is "sda3_crypt"* *(It still needs to be typed in)'
+read -p '>' luks
+
+sed -i "s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
+echo $(awk '{if ($luks) {$0=$0 ",keyscript=/usr/local/bin/passphrase-from-tpm')
 
 tpm2_clear
 tpm2_pcrread sha1:0,2,3,7 -o pcrs.bin
