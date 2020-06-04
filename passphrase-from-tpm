@@ -1,13 +1,6 @@
 #!/bin/sh
 set +e #I should probably keep this in for now.
-	echo "Unlocking via TPM" >&2
-try(	
-	export TPM2TOOLS_TCTI="device:/dev/tpm0"
-	/usr/local/bin/tpm2_unseal -c 0x81000000 --auth pcr:sha1:0,2,3,7 
-	if [ $? -eq 0 ]; then
-		exit
-	fi
-)
-if [ $? -ne 0 ]; then
-/lib/cryptsetup/askpass "Disk unlock fallback; enter passphrase for $CRYPTTAB_SOURCE ($CRYPTTAB_NAME): "
-fi
+echo "Unlocking via TPM" >&2
+export TPM2TOOLS_TCTI="device:/dev/tpm0" || /lib/cryptsetup/askpass "Disk unlock fallback; enter passphrase for $CRYPTTAB_SOURCE ($CRYPTTAB_NAME): "
+/usr/local/bin/tpm2_unseal -c 0x81000009 --auth pcr:sha1:0,2,3,7 || /lib/cryptsetup/askpass "Disk unlock fallback; enter passphrase for $CRYPTTAB_SOURCE ($CRYPTTAB_NAME): "
+
