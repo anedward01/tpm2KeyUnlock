@@ -59,7 +59,6 @@ systemctl daemon-reload
 ldconfig
 systemctl enable tpm2-abrmd
 service tpm2-abrmd start
-systemctl status tpm2-abrmd.service
 
 cd /usr/local/src/tpm2-tools || exit 1
 ./bootstrap
