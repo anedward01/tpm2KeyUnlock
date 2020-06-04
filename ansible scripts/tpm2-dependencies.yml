@@ -1,0 +1,76 @@
+---
+- name: TPM2 Dependencies
+  hosts: tpm2
+  become: true
+  
+  tasks:
+    apt:
+      name: autoconf-archive
+      state: latest
+
+    apt:
+      name: libcmocka0
+      state: latest
+
+    apt:
+      name: libcmocka-dev
+      state: latest
+
+    apt:
+      name: build-essential
+      state: latest
+      
+    apt:
+      name: git
+      state: latest
+    apt:
+      name: pkg-config
+      state: latest
+    apt:
+      name: gcc
+      state: latest
+    apt:
+      name: g++
+      state: latest
+    apt:
+      name: m4
+      state: latest
+    apt:
+      name: libtool
+      state: latest
+    apt:
+      name: automake
+      state: latest
+    apt:
+      name: libgcrypt20-dev
+      state: latest
+    apt:
+      name: libjson-c-dev
+      state: latest
+    apt:
+      name: autoconf
+      state: latest
+    apt:
+      name: libdbus-glib-1-dev
+      state: latest
+    apt:
+      name: glib2.0
+      state: latest
+    apt:
+      name: cmake
+      state: latest
+    apt:
+      name: libssl-dev
+      state: latest
+    apt:
+      name: libcurl4-gnutls-dev
+      state: latest
+    apt:
+      name: doxygen
+      state: latest
+    apt:
+      name: uuid-dev
+      state: latest
+    apt:
+      name: efitools
+      state: latest

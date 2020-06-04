@@ -19,6 +19,8 @@ First, install the necessary dependencies:
     m4 \
     libtool \
     automake \
+    libgcrypt20-dev \
+    libjson-c-dev \
     autoconf \
     libdbus-glib-1-dev \
     libssl-dev \
@@ -27,6 +29,7 @@ First, install the necessary dependencies:
     libssl-dev \
     libcurl4-gnutls-dev \
     doxygen \
+    uuid-dev \
     efitools
 
 
