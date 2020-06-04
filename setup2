@@ -12,6 +12,10 @@ cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2
 chmod 0755 /usr/share/initramfs-tools/hooks/tpm2
 chown 0:0 /etc/initramfs-tools/hooks/tpm2 /usr/share/initramfs-tools/hooks/tpm2
 
+mkdir -p /etc/initramfs/post-update.d/
+cp bootChain-update /etc/initramfs/post-update.d/
+chmod +x /etc/initramfs/post-update.d/bootChain-update
+
 mkdir -p /usr/local/var/tpm-manager || exit 1
 chmod 0500 /usr/local/var/tpm-manager || exit 1
 chown 0:0 /usr/local/var/tpm-manager || exit 1
