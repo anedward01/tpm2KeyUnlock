@@ -5,7 +5,7 @@ if [ "${EUID}" -gt 0 ]; then
 	exit 1
 fi
 
-PACKAGES=( 'autoconf-archive' 'm4' 'libgcrypt20-dev' 'libjson-c-dev' 'uuid-dev' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'glib2.0' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' )
+PACKAGES=( 'autoconf-archive' 'm4' 'libgcrypt20-dev' 'libjson-c-dev' 'uuid-dev' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' )
 
 for pkg in "${PACKAGES[@]}";do
 	if ! dpkg -l "${pkg}" | grep '^ii '; then
@@ -15,6 +15,8 @@ for pkg in "${PACKAGES[@]}";do
 		fi
 	fi
 done
+
+apt-get install glib2.0 || (echo "Could not install glib2.0"; exit 1)
 
 cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
