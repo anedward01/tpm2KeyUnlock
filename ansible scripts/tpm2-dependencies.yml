@@ -4,73 +4,112 @@
   become: true
   
   tasks:
-    apt:
-      name: autoconf-archive
-      state: latest
+    - name: autoconf-archive
+      apt:
+        name: autoconf-archive
+        state: latest
+    
+    - name: libcmocka0
+      apt:
+        name: libcmocka0
+        state: latest
+    
+    - name: libcmocka-dev
+      apt:
+        name: libcmocka-dev
+        state: latest
+    
+    - name: build-essential
+      apt:
+        name: build-essential
+        state: latest
+          
+    - name: git
+      apt:
+        name: git
+        state: latest    
 
-    apt:
-      name: libcmocka0
-      state: latest
+    - name: pkg-config
+      apt:
+        name: pkg-config
+        state: latest    
 
-    apt:
-      name: libcmocka-dev
-      state: latest
+    - name: gcc
+      apt:
+        name: gcc
+        state: latest    
 
-    apt:
-      name: build-essential
-      state: latest
-      
-    apt:
-      name: git
-      state: latest
-    apt:
-      name: pkg-config
-      state: latest
-    apt:
-      name: gcc
-      state: latest
-    apt:
-      name: g++
-      state: latest
-    apt:
-      name: m4
-      state: latest
-    apt:
-      name: libtool
-      state: latest
-    apt:
-      name: automake
-      state: latest
-    apt:
-      name: libgcrypt20-dev
-      state: latest
-    apt:
-      name: libjson-c-dev
-      state: latest
-    apt:
-      name: autoconf
-      state: latest
-    apt:
-      name: libdbus-glib-1-dev
-      state: latest
-    apt:
-      name: glib2.0
-      state: latest
-    apt:
-      name: cmake
-      state: latest
-    apt:
-      name: libssl-dev
-      state: latest
-    apt:
-      name: libcurl4-gnutls-dev
-      state: latest
-    apt:
-      name: doxygen
-      state: latest
-    apt:
-      name: uuid-dev
-      state: latest
-    apt:
-      name: efitools
-      state: latest
+    - name: g++
+      apt:
+        name: g++
+        state: latest    
+
+    - name: m4
+      apt:
+        name: m4
+        state: latest    
+
+    - name: libtool
+      apt:
+        name: libtool
+        state: latest    
+
+    - name: automake
+      apt:
+        name: automake
+        state: latest    
+
+    - name: libgcrypt20-dev
+      apt:
+        name: libgcrypt20-dev
+        state: latest    
+
+    - name: libjson-c-dev
+      apt:
+        name: libjson-c-dev
+        state: latest    
+
+    - name: autoconf
+      apt:
+        name: autoconf
+        state: latest    
+
+    - name: libdbus-glix-1-dev
+      apt:
+        name: libdbus-glib-1-dev
+        state: latest    
+
+    - name: glib2.0
+      apt:
+        name: glib2.0
+        state: latest    
+
+    - name: cmake
+      apt:
+        name: cmake
+        state: latest    
+
+    - name: libssl-dev
+      apt:
+        name: libssl-dev
+        state: latest    
+
+    - name: libcurl4-gnutls-dev
+      apt:
+        name: libcurl4-gnutls-dev
+        state: latest    
+
+    - name: doxygen
+      apt:
+        name: doxygen
+        state: latest    
+
+    - name: uuid-dev
+      apt:
+        name: uuid-dev
+        state: latest
+    
+    - name: efitools
+      apt:
+        name: efitools
+        state: latest

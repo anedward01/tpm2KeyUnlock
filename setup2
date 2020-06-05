@@ -35,7 +35,7 @@ echo 'Enter the LUKS partition name. Default is "sda3_crypt"* *(It still needs t
 read -p '>' luks
 
 sed -i "s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
-echo $(awk '{if ($luks) {$0=$0 ",keyscript=/usr/local/bin/passphrase-from-tpm')
+echo $(awk '{if ($luks) {$0=$0 "\,keyscript=/usr/local/bin/passphrase-from-tpm')
 
 tpm2_clear
 tpm2_pcrread sha1:0,2,3,7 -o pcrs.bin
