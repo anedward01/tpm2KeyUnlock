@@ -132,6 +132,11 @@ openssl x509 -outform DER -in db.crt -out db.cer
 cert-to-efi-sig-list -g "$(< GUID.txt)" db.crt db.esl
 sign-efi-sig-list -g "$(< GUID.txt)" -k KEK.key -c KEK.crt db db.esl db.auth
 
+cp db.auth /boot/efi/EFI/BOOT/
+cp KEK.auth /boot/efi/EFI/BOOT/
+
+mokutil --import db.cer KEK.auth
+
 touch cmdline.txt
 
 
@@ -151,6 +156,8 @@ objcopy \
 	/usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOT_RECX64.EFI
 
 sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOT_RECX64.EFI /boot/efi/EFI/BOOT/BOOT_RECX64.EFI
+
+
 
 echo "TPM2 boot enabled, please restart." >> /var/run/reboot-required
 cat /var/run/reboot-required
