@@ -16,7 +16,7 @@ for pkg in "${PACKAGES[@]}";do
 	fi
 done
 
-apt-get install glib2.0 || (echo "Could not install glib2.0"; exit 1)
+apt-get install -y glib2.0 || (echo "Could not install glib2.0"; exit 1)
 
 cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
@@ -162,6 +162,7 @@ sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOT_RECX64.EFI /b
 chmod +x 42_tpm
 if cp 42_tpm /etc/grub.d/; then
 	sed -i "s/GRUB_DEFAULT=\"0\"/GRUB_DEFAULT=\"TPM\""
+	update-grub
 else
 	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
 fi
