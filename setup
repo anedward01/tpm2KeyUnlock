@@ -159,8 +159,12 @@ objcopy \
 
 sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOT_RECX64.EFI /boot/efi/EFI/BOOT/BOOT_RECX64.EFI
 
-
-
-echo "TPM2 boot enabled, please restart." >> /var/run/reboot-required
+chmod +x 42_tpm
+if cp 42_tpm /etc/grub.d/; then
+	sed -i "s/GRUB_DEFAULT=\"0\"/GRUB_DEFAULT=\"TPM\""
+else
+	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
+fi
+echo "TPM2 boot enabled, please restart. If you have GRUB, there will be a menu entry." >> /var/run/reboot-required
 cat /var/run/reboot-required
 
