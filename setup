@@ -134,7 +134,12 @@ openssl x509 -outform DER -in db.crt -out db.cer
 cert-to-efi-sig-list -g "$(< GUID.txt)" db.crt db.esl
 sign-efi-sig-list -g "$(< GUID.txt)" -k KEK.key -c KEK.crt db db.esl db.auth
 
-touch cmdline.txt
+cp db.auth /boot/efi/EFI/BOOT/
+cp KEK.auth /boot/efi/EFI/BOOT/
+
+mokutil --import db.cer KEK.cer
+
+echo "root=/dev/mapper/vgubuntu-root" > cmdline.txt
 
 
 objcopy \
