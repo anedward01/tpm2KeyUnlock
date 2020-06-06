@@ -80,9 +80,7 @@
         state: latest    
 
     - name: glib2.0
-      apt:
-        name: glib2.0
-        state: latest    
+      command: apt-get install glib2.0
 
     - name: cmake
       apt:
