@@ -81,6 +81,10 @@
 
     - name: glib2.0
       command: apt-get install glib2.0
+      args:
+        warn: false # apt-get throws a warning about using apt instead. Apt currently does not includ glib2.0
+      register: apt_result
+      changed_when: '"additional disk space" in apt_result.stdout' # Naturally, apt-get always throws a changed result. Checks to see if something was actually getting changed.
 
     - name: cmake
       apt:
