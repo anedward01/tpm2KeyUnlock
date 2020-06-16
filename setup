@@ -5,7 +5,7 @@ if [ "${EUID}" -gt 0 ]; then
 	exit 1
 fi
 
-PACKAGES=( 'autoconf-archive' 'm4' 'libgcrypt20-dev' 'libjson-c-dev' 'uuid-dev' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' )
+PACKAGES=( 'autoconf-archive' 'm4' 'libgcrypt20-dev' 'libjson-c-dev' 'uuid-dev' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' 'tpm2-abrmd' 'tpm2-tools')
 
 for pkg in "${PACKAGES[@]}";do
 	if ! dpkg -l "${pkg}" | grep '^ii '; then
@@ -18,10 +18,11 @@ done
 
 apt-get install -y glib2.0 || (echo "Could not install glib2.0"; exit 1)
 
+chmod +x 42_tpm
+cp 42_tpm /etc/grub.d/ || echo "GRUB not found."
+
 cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
-git clone https://github.com/tpm2-software/tpm2-abrmd.git
-git clone https://github.com/tpm2-software/tpm2-tools.git
 
 cd /usr/local/src/tpm2-tss || exit 1
 ./bootstrap
@@ -40,43 +41,6 @@ if id tss;then
 	echo "User rss already exists, please check user details"
 else
 	useradd --system --user-group tss
-fi
-
-cd /usr/local/src/tpm2-abrmd || exit 1
-./bootstrap
-./configure --with-dbuspolicydir=/etc/dbus-1/system.d --with-systemdsystemunitdir=/lib/systemd/system
-if make; then
-	if ! make install; then
-		echo "Unable to install tpm2-abrmd" >&2
-		exit 1
-	fi
-else
-	echo "Unable to build tpm2-abrmd" >&2
-	exit 1
-fi
-
-udevadm control --reload-rules && udevadm trigger
-pkill -HUP dbus-daemon
-systemctl daemon-reload
-ldconfig
-systemctl enable tpm2-abrmd
-service tpm2-abrmd start
-
-cd /usr/local/src/tpm2-tools || exit 1
-./bootstrap
-./bootstrap
-./bootstrap
-./configure
-make
-make install
-if make; then
-	if ! make install; then
-		echo "Unable to install tpm2-tools" >&2
-		exit 1
-	fi
-else
-	echo "Unable to build tpm2-tools" >&2
-	exit 1
 fi
 
 source /etc/profile
@@ -109,6 +73,7 @@ for file in /usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOTX
 		exit 1
 	fi
 done
+
 mkdir -p /usr/local/var/bootChain || exit 1
 cd /usr/local/var/bootChain || exit 1
 
@@ -139,7 +104,10 @@ cp KEK.auth /boot/efi/EFI/BOOT/
 
 mokutil --import db.cer KEK.cer
 
-echo "root=/dev/mapper/vgubuntu-root" > cmdline.txt
+# Searches for LUKS drive, then removes PART UUID, and finally retrieves UUID
+ROOT_DIR=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[a-z0-9-]+")
+
+echo "root=$ROOT_DIR" > cmdline.txt
 
 
 objcopy \
@@ -159,13 +127,13 @@ objcopy \
 
 sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOT_RECX64.EFI /boot/efi/EFI/BOOT/BOOT_RECX64.EFI
 
-chmod +x 42_tpm
-if cp 42_tpm /etc/grub.d/; then
-	sed -i "s/GRUB_DEFAULT=\"0\"/GRUB_DEFAULT=\"TPM\""
+if  cd /etc/grub.d/; then
+	sed -i "s/GRUB_DEFAULT=\"0\"/GRUB_DEFAULT=\"TPM\"/g" /etc/default/grub
 	update-grub
 else
 	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
 fi
+
 echo "TPM2 boot enabled, please restart. If you have GRUB, there will be a menu entry." >> /var/run/reboot-required
 cat /var/run/reboot-required
 

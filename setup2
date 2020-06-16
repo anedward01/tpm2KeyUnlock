@@ -30,9 +30,7 @@ echo 'Enter drive name. Default is /dev/sda3* *(It still needs to be typed in)'
 read -p '>' drive
 cryptsetup luksAddKey $drive secret.bin
 
-luks=''
-echo 'Enter the LUKS partition name. Default is "sda3_crypt"* *(It still needs to be typed in)'
-read -p '>' luks
+luks=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[a-z0-9-]+")
 
 sed -i "s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
 echo $(awk '{if ($luks) {$0=$0 "\,keyscript=/usr/local/bin/passphrase-from-tpm')
@@ -42,5 +40,4 @@ tpm2_pcrread sha1:0,2,3,7 -o pcrs.bin
 tpm2_createpolicy --policy-pcr -l sha1:0,2,3,7 -f pcrs.bin --policy policy.digest
 tpm2_createprimary -c primary.context
 tpm2_create -u obj.pub -r obj.priv -C primary.context -L policy.digest --attributes "noda|adminwithpolicy|fixedparent|fixedtpm" -i secret.bin
-tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
 tpm2_evictcontrol -c load.context
