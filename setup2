@@ -25,15 +25,16 @@ touch secret.bin
 chmod 0400 secret.bin
 dd if=/dev/urandom of=secret.bin bs=32 count=1 conv=sync
 
-drive=''
-echo 'Enter drive name. Default is /dev/sda3* *(It still needs to be typed in)'
-read -p '>' drive
+# Pulls out the name of the LUKS encrypted drive.
+drive=$(blkid | grep LUKS | grep -Pow "^/[A-Za-z0-9/]+")
 cryptsetup luksAddKey $drive secret.bin
 
+# Pulls out the UUID of the LUKS encrypted drive.
 luks=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[a-z0-9-]+")
 
-sed -i "s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
-echo $(awk '{if ($luks) {$0=$0 "\,keyscript=/usr/local/bin/passphrase-from-tpm')
+# Edits /etc/crypttab to include the new secret and the keyscript
+sed -i "/$luks/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
+sed -i "/$luks/s/$/\,keyscript=/usr/local/bin/passphrase-from-tpm/g" /etc/crypttab
 
 tpm2_clear
 tpm2_pcrread sha1:0,2,3,7 -o pcrs.bin

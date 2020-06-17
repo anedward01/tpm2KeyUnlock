@@ -67,7 +67,7 @@ while [ "${cont}" != 'yes' ]; do
 	echo 'Continue? Enter "yes" to continue or Ctrl+C to break.'
 	read -p '>' cont
 done
-for file in /usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOTX64.EFI /etc/os-release;do
+for file in /usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOTX64.EFI /etc/os-release;do 
 	if [ ! -e "${file}" ];then
 		echo -e "Unable to find ${file}." >&2
 		exit 1
