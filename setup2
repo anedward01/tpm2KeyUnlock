@@ -11,6 +11,9 @@ chmod 0755 /etc/initramfs-tools/hooks/tpm2
 cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2
 chmod 0755 /usr/share/initramfs-tools/hooks/tpm2
 chown 0:0 /etc/initramfs-tools/hooks/tpm2 /usr/share/initramfs-tools/hooks/tpm2
+chmod 0755 passphrase-from-tpm
+cp passphrase-from-tpm /usr/local/bin/
+chown 0:0 /usr/local/bin/passphrase-from-tpm
 
 mkdir -p /etc/initramfs/post-update.d/
 cp bootChain-update /etc/initramfs/post-update.d/
@@ -37,8 +40,28 @@ sed -i "/$luks/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/cryptta
 sed -i "/$luks/s/$/\,keyscript=/usr/local/bin/passphrase-from-tpm/g" /etc/crypttab
 
 tpm2_clear
-tpm2_pcrread sha1:0,2,3,7 -o pcrs.bin
-tpm2_createpolicy --policy-pcr -l sha1:0,2,3,7 -f pcrs.bin --policy policy.digest
+
+TPM_TEST=$(tpm2_pcrread sha256:0 | grep -Po "[0][x][A-Za-z0-9]+")
+PCR_BANK=1
+if [[$TPM_TEST = '' ]]; then
+	echo "TPM SHA 256 banks are disabled. To use SHA 256, enable SHA 256 PCR banks in BIOS with a compatible TPM."
+	echo "Falling back to SHA 1 PCR banks."
+else
+	if [[ $TPM_TEST = '0x0000000000000000000000000000000000000000000000000000000000000000']]; then
+		echo "TPM SHA 256 PCR banks not populated. TPM Spec 1.x must be enabled to continue."
+		echo "Falling back to SHA 1 PCR banks."
+	else
+		PCR_BANK=256
+	fi
+fi
+
+tpm2_pcrread sha$PCR_BANK:0,2,3,7 -o pcrs.bin
+tpm2_createpolicy --policy-pcr -l sha$PCR_BANK:0,2,3,7 -f pcrs.bin --policy policy.digest
 tpm2_createprimary -c primary.context
 tpm2_create -u obj.pub -r obj.priv -C primary.context -L policy.digest --attributes "noda|adminwithpolicy|fixedparent|fixedtpm" -i secret.bin
+tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
 tpm2_evictcontrol -c load.context
+
+sed -i "s/HASH/$PCR_BANK/g" /usr/local/bin/passphrase-from-tpm
+reference=$(tpm2_getcap handles-persistent | grep -Po "[0][x][A-Za-z0-9]+" | tail -1)
+sed -i "s/REFERENCE/$reference/g" /usr/local/bin/passphrase-from-tpm

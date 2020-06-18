@@ -105,9 +105,8 @@ cp KEK.auth /boot/efi/EFI/BOOT/
 mokutil --import db.cer KEK.cer
 
 # Searches for LUKS drive, then removes PART UUID, and finally retrieves UUID
-ROOT_DIR=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[a-z0-9-]+")
 
-echo "root=$ROOT_DIR" > cmdline.txt
+echo "root=/dev/mapper/vgubuntu-root" > cmdline.txt
 
 
 objcopy \

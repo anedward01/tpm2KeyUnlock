@@ -2,6 +2,6 @@
 set -e
 if [ "$1" = "prereqs" ]; then exit 0; fi
 . /usr/share/initramfs-tools/hook-functions
-copy_exec /usr/local/bin/tpm2_unseal
+copy_exec /usr/local/bin/tpm2_unseal || copy_exec /usr/bin/tpm2_unseal
 copy_exec /usr/local/lib/libtss2-tcti-device.so
 
