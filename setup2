@@ -43,11 +43,11 @@ tpm2_clear
 
 TPM_TEST=$(tpm2_pcrread sha256:0 | grep -Po "[0][x][A-Za-z0-9]+")
 PCR_BANK=1
-if [[$TPM_TEST = '' ]]; then
+if [[ $TPM_TEST = "" ]]; then
 	echo "TPM SHA 256 banks are disabled. To use SHA 256, enable SHA 256 PCR banks in BIOS with a compatible TPM."
 	echo "Falling back to SHA 1 PCR banks."
 else
-	if [[ $TPM_TEST = '0x0000000000000000000000000000000000000000000000000000000000000000']]; then
+	if [[ $TPM_TEST = '0x0000000000000000000000000000000000000000000000000000000000000000' ]]; then
 		echo "TPM SHA 256 PCR banks not populated. TPM Spec 1.x must be enabled to continue."
 		echo "Falling back to SHA 1 PCR banks."
 	else
@@ -62,6 +62,6 @@ tpm2_create -u obj.pub -r obj.priv -C primary.context -L policy.digest --attribu
 tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
 tpm2_evictcontrol -c load.context
 
-sed -i "s/HASH/$PCR_BANK/g" /usr/local/bin/passphrase-from-tpm
+sed -i "s/HASH/SHA$PCR_BANK/g" /usr/local/bin/passphrase-from-tpm
 reference=$(tpm2_getcap handles-persistent | grep -Po "[0][x][A-Za-z0-9]+" | tail -1)
 sed -i "s/REFERENCE/$reference/g" /usr/local/bin/passphrase-from-tpm
