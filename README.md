@@ -16,7 +16,7 @@ The setup of TPM unlocking involves three phases. The first phase installs the T
 - A bootloader to boot the kernel or custom boot options in BIOS.
 - Using alternative PCR values (0,2,3,7,8). These should work, but there aren't many sources supporting this.
 
-# Current issues
+# TODO
 - [FIXED] The scripts `setup` and `setup2` are properly set up to be almost completely automated. `setup` now adds a GRUB entry and sets it to default boot. If GRUB isn't installed, it continues installation. Adding the kernel to a bootloader is recommended, but the EFI stub can be directly added to BIOS. `setup2` now automatically finds the first LUKS drive using grep and lots of regex. It pulls the partition name and UUID to modify /etc/crypttab and add `secret.bin` to `cryptsetup`. Finally, the scripts now support SHA 256 PCR banks. If the banks are unavailable or unpopulated, the script defaults to SHA 1. 
 
 - [FIXED] The `passphrase-from-tpm` now allows fallback passphrase entry. This is pretty solid and consistent now.
