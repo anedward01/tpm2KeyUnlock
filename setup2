@@ -37,7 +37,7 @@ luks=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[a-z0-9-]+")
 
 # Edits /etc/crypttab to include the new secret and the keyscript
 sed -i "/$luks/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
-sed -i "/$luks/s/$/\,keyscript=/usr/local/bin/passphrase-from-tpm/g" /etc/crypttab
+sed -i "/$luks/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" /etc/crypttab
 
 tpm2_clear
 
@@ -62,6 +62,8 @@ tpm2_create -u obj.pub -r obj.priv -C primary.context -L policy.digest --attribu
 tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
 tpm2_evictcontrol -c load.context
 
-sed -i "s/HASH/SHA$PCR_BANK/g" /usr/local/bin/passphrase-from-tpm
+sed -i "s/HASH/sha$PCR_BANK/g" /usr/local/bin/passphrase-from-tpm
 reference=$(tpm2_getcap handles-persistent | grep -Po "[0][x][A-Za-z0-9]+" | tail -1)
 sed -i "s/REFERENCE/$reference/g" /usr/local/bin/passphrase-from-tpm
+
+update-initramfs -u
