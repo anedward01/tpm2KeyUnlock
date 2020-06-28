@@ -65,7 +65,7 @@ apt-get install -y glib2.0 || (echo "Could not install glib2.0"; exit 1)
 
 chmod +x setup2 42_tpm
 cp tpm2keyunlock.service /etc/systemd/system/
-sed -i 's/LOCATION/$BASEDIR/g' /etc/systemd/system/tpm2keyunlock.service
+sed -i "s/LOCATION/${BASEDIR}/g" /etc/systemd/system/tpm2keyunlock.service
 
 cp 42_tpm /etc/grub.d/ || echo "GRUB not found."
 sed -i "s/UUIDREPLACE/$BOOT/g" /etc/grub.d/42_tpm
