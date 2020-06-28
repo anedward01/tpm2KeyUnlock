@@ -1,11 +1,58 @@
 #!/usr/bin/env bash
 
+echo "TPM2-based LUKS Authentication setup"
+
 if [ "${EUID}" -gt 0 ]; then
-	echo "Run as root (with sudo, su, ssh, etc...)" >&2
-	exit 1
+    echo "Error: Please run as root (sudo, su, ssh, etc.)" >&2
+    exit 1
 fi
 
+# Pulls out the UUID of the EFI boot partition.
+BOOT=$(blkid | grep vfat |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
+# Pulls out the UUID of the LUKS encrypted drive.
+LUKS=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
+DRIVE=$(blkid | grep $LUKS | grep -Pow "^/[A-Za-z0-9/]+")
+# Pulls up Linux kernel and initrd file
+LINUX="$( ls -t /boot/vmlinuz* | head -n 1 )"
+INITRD="$( sed -e 's#vmlinuz#initrd\.img#g' <<< "${LINUX}" )"
+# Grabs file location to append to tpm2keyunlock.service
+BASEDIR=$(dirname $0)
+# List of packages to install before compiling tpm2-tss
 PACKAGES=( 'autoconf-archive' 'm4' 'libgcrypt20-dev' 'libjson-c-dev' 'uuid-dev' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' 'tpm2-abrmd' 'tpm2-tools')
+CONTINUE=''
+PASSWORD=''
+
+print_usage() {
+	echo -e "b: optional boot device location by UUID\nl: optional LUKS partition by UUID\np: cryptsetup password\ny: continue installation without prompts"
+}
+
+while getopts "b:l:p:y" flag; do
+	case "${flag}" in
+		b) BOOT="${OPTARG}" ;;
+		l) LUKS="${OPTARG}" ;;
+		p) PASSWORD="${OPTARG}" ;;
+		y) CONTINUE="yes" ;;
+		*) print_usage
+			exit 1 ;;
+	esac
+done
+
+if [ $BOOT = '' ]; then
+    echo "The boot device was not found."
+    #TODO: Add option for manual boot device
+    exit 1
+fi
+
+if [ $LUKS = '' ]; then
+    echo "The LUKS partition was not found."
+    echo "Please make sure LUKS encryption was set up during OS install."
+    exit 1
+    #TODO: Add option for manual LUKS partition
+fi
+
+if [ $(ls /dev/ | grep -P "tpm[0-9]+") = "" ]; then
+	echo "No TPM device found in /dev/. This typically means the device is disabled in BIOS or does not exist."
+fi
 
 for pkg in "${PACKAGES[@]}";do
 	if ! dpkg -l "${pkg}" | grep '^ii '; then
@@ -18,8 +65,12 @@ done
 
 apt-get install -y glib2.0 || (echo "Could not install glib2.0"; exit 1)
 
-chmod +x 42_tpm
+chmod +x setup2 42_tpm
+cp tpm2keyunlock.service /etc/systemd/system/
+sed -i 's/LOCATION/$BASEDIR/g' /etc/systemd/system/tpm2keyunlock.service
+
 cp 42_tpm /etc/grub.d/ || echo "GRUB not found."
+sed -i "/s/UUID/search \-\-no\-floppy \-\-fs\-uuid \-\-set\=root $BOOT/g" /etc/grub.d/42_tpm
 
 cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
@@ -54,18 +105,16 @@ done
 echo "Linux kernels seen:"
 ls -ltr /boot/vmlinuz*
 
-linux="$( ls -t /boot/vmlinuz* | head -n 1 )"
-initrd="$( sed -e 's#vmlinuz#initrd\.img#g' <<< "${linux}" )"
-if ! [ -e "${initrd}" ]; then
-	echo -n "Unable to find InitRD guess of ${initrd}"
-	initrd="$( ls -t /boot/initrd* | head -n 1  )"
-	echo " using ${initrd} instead"
+if ! [ -e "${INITRD}" ]; then
+	echo -n "Unable to find InitRD guess of ${INITRD}"
+	INITRD="$( ls -t /boot/initrd* | head -n 1  )"
+	echo " using ${INITRD} instead"
 fi
-echo -e "Installing for:\n\tkernel:\t${linux}\n\tInitRD:\t${initrd}"
-cont=''
-while [ "${cont}" != 'yes' ]; do
+echo -e "Installing for:\n\tkernel:\t${LINUX}\n\tInitRD:\t${INITRD}"
+
+while [ "${CONTINUE}" != 'yes' ]; do
 	echo 'Continue? Enter "yes" to continue or Ctrl+C to break.'
-	read -p '>' cont
+	read -p '>' CONTINUE
 done
 for file in /usr/lib/systemd/boot/efi/linuxx64.efi.stub /boot/efi/EFI/BOOT/BOOTX64.EFI /etc/os-release;do 
 	if [ ! -e "${file}" ];then
@@ -82,19 +131,19 @@ if [ ! -e GUID.txt ]; then
 fi
 
 #Create Platform Key
-openssl req -newkey rsa:2048 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=my Platform Key/" -out PK.crt
+openssl req -newkey rsa:2048 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=TPM2 Platform Key/" -out PK.crt
 openssl x509 -outform DER -in PK.crt -out PK.cer
 cert-to-efi-sig-list -g "$(< GUID.txt)" PK.crt PK.esl
 sign-efi-sig-list -g "$(< GUID.txt)" -k PK.key -c PK.crt PK PK.esl PK.auth
 
 #Create Key Exchange Key
-openssl req -newkey rsa:2048 -nodes -keyout KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=my Key Exchange Key/" -out KEK.crt
+openssl req -newkey rsa:2048 -nodes -keyout KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=TPM2 Key Exchange Key/" -out KEK.crt
 openssl x509 -outform DER -in KEK.crt -out KEK.cer
 cert-to-efi-sig-list -g "$(< GUID.txt)" KEK.crt KEK.esl
 sign-efi-sig-list -g "$(< GUID.txt)" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
 
 #Creating Signature Database Key
-openssl req -newkey rsa:2048 -nodes -keyout db.key -new -x509 -sha256 -days 3650 -subj "/CN=my Signature Database key/" -out db.crt
+openssl req -newkey rsa:2048 -nodes -keyout db.key -new -x509 -sha256 -days 3650 -subj "/CN=TPM2 Signature Database key/" -out db.crt
 openssl x509 -outform DER -in db.crt -out db.cer
 cert-to-efi-sig-list -g "$(< GUID.txt)" db.crt db.esl
 sign-efi-sig-list -g "$(< GUID.txt)" -k KEK.key -c KEK.crt db db.esl db.auth
@@ -104,10 +153,7 @@ cp KEK.auth /boot/efi/EFI/BOOT/
 
 mokutil --import db.cer KEK.cer
 
-# Searches for LUKS drive, then removes PART UUID, and finally retrieves UUID
-
 echo "root=/dev/mapper/vgubuntu-root" > cmdline.txt
-
 
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
@@ -126,6 +172,20 @@ objcopy \
 
 sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOT_RECX64.EFI /boot/efi/EFI/BOOT/BOOT_RECX64.EFI
 
+mkdir -p /usr/local/var/tpm-manager || exit 1
+chmod 0500 /usr/local/var/tpm-manager || exit 1
+chown 0:0 /usr/local/var/tpm-manager || exit 1
+
+touch secret.bin
+chmod 0400 secret.bin
+dd if=/dev/urandom of=secret.bin bs=32 count=1 conv=sync
+
+if [ "${PASSWORD}" != '' ]; then
+	cryptsetup luksAddKey $DRIVE secret.bin
+else
+	cryptsetup luksAddKey $DRIVE secret.bin
+fi
+
 if  cd /etc/grub.d/; then
 	sed -i "s/GRUB_DEFAULT=\"0\"/GRUB_DEFAULT=\"TPM\"/g" /etc/default/grub
 	sed -i "/GRUB\_DEFAULT\=/s/0/TPM/g" /etc/default/grub
@@ -133,6 +193,11 @@ if  cd /etc/grub.d/; then
 else
 	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
 fi
+
+systemctl enable tpm2keyunlock.service
 echo "TPM2 boot enabled, please restart. If you have GRUB, there will be a menu entry." >> /var/run/reboot-required
 cat /var/run/reboot-required
+
+
+
 

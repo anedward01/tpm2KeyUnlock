@@ -1,0 +1,7 @@
+[Unit]
+Description=TPM2 post-install manager
+
+[Service]
+Type=forking
+User=root
+ExecStart=LOCATION/setup2

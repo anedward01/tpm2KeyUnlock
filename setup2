@@ -5,13 +5,17 @@ if [ "${EUID}" -gt 0 ]; then
 	exit 1
 fi
 
-chmod 0755 tpm2Hook
-cp tpm2Hook /etc/initramfs-tools/hooks/tpm2
-chmod 0755 /etc/initramfs-tools/hooks/tpm2
+# Pulls out the UUID of the LUKS encrypted drive.
+LUKS=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[a-z0-9-]+")
+
+TPM_TEST=$(tpm2_pcrread sha256:0 | grep -Po "[0][x][A-Za-z0-9]+")
+PCR_BANK=1
+
+systemctl disable tpm2keyunlock.service
+
+chmod 0755 tpm2Hook passphrase-from-tpm
 cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2
-chmod 0755 /usr/share/initramfs-tools/hooks/tpm2
 chown 0:0 /etc/initramfs-tools/hooks/tpm2 /usr/share/initramfs-tools/hooks/tpm2
-chmod 0755 passphrase-from-tpm
 cp passphrase-from-tpm /usr/local/bin/
 chown 0:0 /usr/local/bin/passphrase-from-tpm
 
@@ -19,30 +23,12 @@ mkdir -p /etc/initramfs/post-update.d/
 cp bootChain-update /etc/initramfs/post-update.d/
 chmod +x /etc/initramfs/post-update.d/bootChain-update
 
-mkdir -p /usr/local/var/tpm-manager || exit 1
-chmod 0500 /usr/local/var/tpm-manager || exit 1
-chown 0:0 /usr/local/var/tpm-manager || exit 1
 cd /usr/local/var/tpm-manager || exit 1
 
-touch secret.bin
-chmod 0400 secret.bin
-dd if=/dev/urandom of=secret.bin bs=32 count=1 conv=sync
-
-# Pulls out the name of the LUKS encrypted drive.
-drive=$(blkid | grep LUKS | grep -Pow "^/[A-Za-z0-9/]+")
-cryptsetup luksAddKey $drive secret.bin
-
-# Pulls out the UUID of the LUKS encrypted drive.
-luks=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[a-z0-9-]+")
-
 # Edits /etc/crypttab to include the new secret and the keyscript
-sed -i "/$luks/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
-sed -i "/$luks/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" /etc/crypttab
+sed -i "/$LUKS/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" /etc/crypttab
+sed -i "/$LUKS/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" /etc/crypttab
 
-tpm2_clear
-
-TPM_TEST=$(tpm2_pcrread sha256:0 | grep -Po "[0][x][A-Za-z0-9]+")
-PCR_BANK=1
 if [[ $TPM_TEST = "" ]]; then
 	echo "TPM SHA 256 banks are disabled. To use SHA 256, enable SHA 256 PCR banks in BIOS with a compatible TPM."
 	echo "Falling back to SHA 1 PCR banks."
@@ -55,8 +41,8 @@ else
 	fi
 fi
 
-tpm2_pcrread sha$PCR_BANK:0,2,3,7 -o pcrs.bin
-tpm2_createpolicy --policy-pcr -l sha$PCR_BANK:0,2,3,7 -f pcrs.bin --policy policy.digest
+tpm2_pcrread sha$PCR_BANK:0,2,3,7,8 -o pcrs.bin
+tpm2_createpolicy --policy-pcr -l sha$PCR_BANK:0,2,3,7,8 -f pcrs.bin --policy policy.digest
 tpm2_createprimary -c primary.context
 tpm2_create -u obj.pub -r obj.priv -C primary.context -L policy.digest --attributes "noda|adminwithpolicy|fixedparent|fixedtpm" -i secret.bin
 tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
