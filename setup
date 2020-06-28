@@ -175,13 +175,14 @@ sbsign --key db.key --cert db.crt --output /boot/efi/EFI/BOOT/BOOT_RECX64.EFI /b
 mkdir -p /usr/local/var/tpm-manager || exit 1
 chmod 0500 /usr/local/var/tpm-manager || exit 1
 chown 0:0 /usr/local/var/tpm-manager || exit 1
+cd /usr/local/var/tpm-manager || exit 1
 
 touch secret.bin
 chmod 0400 secret.bin
 dd if=/dev/urandom of=secret.bin bs=32 count=1 conv=sync
 
 if [ "${PASSWORD}" != '' ]; then
-	cryptsetup luksAddKey $DRIVE secret.bin
+	echo $PASSWORD | cryptsetup luksAddKey $DRIVE secret.bin
 else
 	cryptsetup luksAddKey $DRIVE secret.bin
 fi
@@ -194,10 +195,11 @@ else
 	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
 fi
 
+cp /etc/crypttab ./
+
+sed -i "/$LUKS/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" crypttab
+sed -i "/$LUKS/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" crypttab
+
 systemctl enable tpm2keyunlock.service
 echo "TPM2 boot enabled, please restart. If you have GRUB, there will be a menu entry." >> /var/run/reboot-required
 cat /var/run/reboot-required
-
-
-
-
