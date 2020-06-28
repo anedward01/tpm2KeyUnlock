@@ -5,6 +5,8 @@ Description=TPM2 post-install manager
 Type=forking
 User=root
 WorkingDirectory=LOCATION
+ReadWriteDirectories=/
+TimeoutSec=180
 ExecStart=LOCATION/setup2
 
 [Install]
