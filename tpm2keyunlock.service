@@ -4,6 +4,7 @@ Description=TPM2 post-install manager
 [Service]
 Type=forking
 User=root
+WorkingDirectory=LOCATION
 ExecStart=LOCATION/setup2
 
 [Install]
