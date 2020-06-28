@@ -12,7 +12,7 @@ systemctl disable tpm2keyunlock.service
 
 chmod 0755 tpm2Hook passphrase-from-tpm
 cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2
-chown 0:0 /etc/initramfs-tools/hooks/tpm2 /usr/share/initramfs-tools/hooks/tpm2
+chown 0:0 /usr/share/initramfs-tools/hooks/tpm2
 cp passphrase-from-tpm /usr/local/bin/
 chown 0:0 /usr/local/bin/passphrase-from-tpm
 
@@ -22,9 +22,9 @@ chmod +x /etc/initramfs/post-update.d/bootChain-update
 
 cd /usr/local/var/tpm-manager || exit 1
 
-mv /etc/cryttab /etc/crypttab.bak
-cp crypttab /etc/crypttab
-rm crypttab
+cp /etc/crypttab /etc/crypttab.bak
+cp /usr/local/var/tpm-manager/crypttab /etc/crypttab
+rm /usr/local/var/tpm-manager/crypttab
 
 if [[ $TPM_TEST = "" ]]; then
 	echo "TPM SHA 256 banks are disabled. To use SHA 256, enable SHA 256 PCR banks in BIOS with a compatible TPM."
