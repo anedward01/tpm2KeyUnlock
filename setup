@@ -39,7 +39,6 @@ done
 
 if [ $BOOT = '' ]; then
     echo "The boot device was not found."
-    #TODO: Add option for manual boot device
     exit 1
 fi
 
@@ -47,7 +46,6 @@ if [ $LUKS = '' ]; then
     echo "The LUKS partition was not found."
     echo "Please make sure LUKS encryption was set up during OS install."
     exit 1
-    #TODO: Add option for manual LUKS partition
 fi
 
 if [ $(ls /dev/ | grep -P "tpm[0-9]+") = "" ]; then
@@ -70,7 +68,7 @@ cp tpm2keyunlock.service /etc/systemd/system/
 sed -i 's/LOCATION/$BASEDIR/g' /etc/systemd/system/tpm2keyunlock.service
 
 cp 42_tpm /etc/grub.d/ || echo "GRUB not found."
-sed -i "/s/UUID/search \-\-no\-floppy \-\-fs\-uuid \-\-set\=root $BOOT/g" /etc/grub.d/42_tpm
+sed -i "s/UUIDREPLACE/$BOOT/g" /etc/grub.d/42_tpm
 
 cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
