@@ -176,6 +176,11 @@ else
 	cryptsetup luksAddKey $DRIVE secret.bin
 fi
 
+cp /etc/crypttab ./
+
+sed -i "/$LUKS/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" crypttab
+sed -i "/$LUKS/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" crypttab
+
 if  cd /etc/grub.d/; then
 	sed -i "s/GRUB_DEFAULT=\"0\"/GRUB_DEFAULT=\"TPM\"/g" /etc/default/grub
 	sed -i "/GRUB\_DEFAULT\=/s/0/TPM/g" /etc/default/grub
@@ -183,11 +188,6 @@ if  cd /etc/grub.d/; then
 else
 	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
 fi
-
-cp /etc/crypttab ./
-
-sed -i "/$LUKS/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" crypttab
-sed -i "/$LUKS/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" crypttab
 
 systemctl enable tpm2keyunlock.service
 echo "TPM2 boot enabled, please restart. If you have GRUB, there will be a menu entry." >> /var/run/reboot-required
