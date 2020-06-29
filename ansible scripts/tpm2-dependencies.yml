@@ -4,114 +4,37 @@
   become: true
   
   tasks:
-    - name: autoconf-archive
+    - name: TPM2 dependencies
       apt:
-        name: autoconf-archive
+        name:
+          - autoconf-archive
+          - libcmocka0
+          - libcmocka-dev
+          - build-essential
+          - git
+          - pkg-config
+          - gcc
+          - g++
+          - m4
+          - libtool
+          - automake
+          - libgcrypt20-dev
+          - libjson-c-dev
+          - autoconf
+          - libdbus-glib-1-dev
+          - cmake
+          - libssl-dev
+          - libcurl4-gnutls-dev
+          - doxygen
+          - uuid-dev
+          - efitools
+          - tpm2-abrmd
+          - tpm2-tools
         state: latest
-    
-    - name: libcmocka0
-      apt:
-        name: libcmocka0
-        state: latest
-    
-    - name: libcmocka-dev
-      apt:
-        name: libcmocka-dev
-        state: latest
-    
-    - name: build-essential
-      apt:
-        name: build-essential
-        state: latest
-          
-    - name: git
-      apt:
-        name: git
-        state: latest    
-
-    - name: pkg-config
-      apt:
-        name: pkg-config
-        state: latest    
-
-    - name: gcc
-      apt:
-        name: gcc
-        state: latest    
-
-    - name: g++
-      apt:
-        name: g++
-        state: latest    
-
-    - name: m4
-      apt:
-        name: m4
-        state: latest    
-
-    - name: libtool
-      apt:
-        name: libtool
-        state: latest    
-
-    - name: automake
-      apt:
-        name: automake
-        state: latest    
-
-    - name: libgcrypt20-dev
-      apt:
-        name: libgcrypt20-dev
-        state: latest    
-
-    - name: libjson-c-dev
-      apt:
-        name: libjson-c-dev
-        state: latest    
-
-    - name: autoconf
-      apt:
-        name: autoconf
-        state: latest    
-
-    - name: libdbus-glix-1-dev
-      apt:
-        name: libdbus-glib-1-dev
-        state: latest    
 
     - name: glib2.0
       command: apt-get install glib2.0
       args:
-        warn: false # apt-get throws a warning about using apt instead. Apt currently does not includ glib2.0
+        warn: false # apt-get throws a warning about using apt instead. Apt currently does not include glib2.0
       register: apt_result
       changed_when: '"additional disk space" in apt_result.stdout' # Naturally, apt-get always throws a changed result. Checks to see if something was actually getting changed.
-
-    - name: cmake
-      apt:
-        name: cmake
-        state: latest    
-
-    - name: libssl-dev
-      apt:
-        name: libssl-dev
-        state: latest    
-
-    - name: libcurl4-gnutls-dev
-      apt:
-        name: libcurl4-gnutls-dev
-        state: latest    
-
-    - name: doxygen
-      apt:
-        name: doxygen
-        state: latest    
-
-    - name: uuid-dev
-      apt:
-        name: uuid-dev
-        state: latest
-    
-    - name: efitools
-      apt:
-        name: efitools
-        state: latest
