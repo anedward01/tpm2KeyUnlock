@@ -150,8 +150,8 @@ cp db.auth /boot/efi/EFI/BOOT/
 cp KEK.auth /boot/efi/EFI/BOOT/
 
 mokutil --import db.cer KEK.cer
-
-echo "root=/dev/mapper/vgubuntu-root" > cmdline.txt
+ROOT=$(blkid | grep -v "LVM" | grep -Po '^/dev/mapper/[A-Za-z0-9-]+)
+echo "root=$ROOT" > cmdline.txt
 
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
