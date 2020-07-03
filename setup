@@ -8,7 +8,7 @@ if [ "${EUID}" -gt 0 ]; then
 fi
 
 # Pulls out the UUID of the EFI boot partition.
-BOOT=$(blkid | grep vfat |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
+BOOT=$(blkid | grep vfat | grep -v "UBUNTU" |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
 # Pulls out the UUID of the LUKS encrypted drive.
 LUKS=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
 DRIVE=$(blkid | grep $LUKS | grep -Pow "^/[A-Za-z0-9/]+")
