@@ -9,6 +9,7 @@ fi
 
 # Pulls out the UUID of the EFI boot partition.
 BOOT=$(blkid | grep vfat | grep -v "UBUNTU" |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
+ROOT=$(blkid | grep -v "LVM" | grep -Po '^/dev/mapper/[A-Za-z0-9-]+')
 # Pulls out the UUID of the LUKS encrypted drive.
 LUKS=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
 DRIVE=$(blkid | grep $LUKS | grep -Pow "^/[A-Za-z0-9/]+")
@@ -23,7 +24,7 @@ CONTINUE=''
 PASSWORD=''
 
 print_usage() {
-	echo -e "b: optional boot device location by UUID\nl: optional LUKS partition by UUID\np: cryptsetup password\ny: continue installation without prompts"
+	echo -e "b: optional boot device location by UUID\nl: optional LUKS partition by UUID\np: cryptsetup password\nr: Provide optional root device.\ny: continue installation without prompts"
 }
 
 while getopts "b:l:p:y" flag; do
@@ -31,18 +32,19 @@ while getopts "b:l:p:y" flag; do
 		b) BOOT="${OPTARG}" ;;
 		l) LUKS="${OPTARG}" ;;
 		p) PASSWORD="${OPTARG}" ;;
+		r) ROOT="${OPTARG}" ;;
 		y) CONTINUE="yes" ;;
 		*) print_usage
 			exit 1 ;;
 	esac
 done
 
-if [ $BOOT = '' ]; then
+if [ "$BOOT" = '' ]; then
     echo "The boot device was not found."
     exit 1
 fi
 
-if [ $LUKS = '' ]; then
+if [ "$LUKS" = '' ]; then
     echo "The LUKS partition was not found."
     echo "Please make sure LUKS encryption was set up during OS install."
     exit 1
@@ -150,7 +152,10 @@ cp db.auth /boot/efi/EFI/BOOT/
 cp KEK.auth /boot/efi/EFI/BOOT/
 
 mokutil --import db.cer KEK.cer
-ROOT=$(blkid | grep -v "LVM" | grep -Po '^/dev/mapper/[A-Za-z0-9-]+')
+
+if [ "$ROOT" = '' ]; then
+	ROOT=/dev/mapper/$(ls /dev/mapper/ | grep -v "crypt control" | grep -Po "[A-Za-z0-9-]+vg[A-Za-z0-9-]+")
+fi
 echo "root=$ROOT" > cmdline.txt
 
 objcopy \
