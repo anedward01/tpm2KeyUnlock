@@ -1,5 +1,5 @@
 # tpm2KeyUnlock
-Adds an automated unlock function based on TPM policy configuration
+Adds automatic decryption function based on TPM policy configuration
 
 Main Source: https://threat.tevora.com/secure-boot-tpm-2/
 
