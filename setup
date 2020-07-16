@@ -155,7 +155,7 @@ mokutil --import db.cer KEK.cer
 
 RECURSE=0
 while [ "$ROOT" = '' ]; do
-	if [ $RECURSE = 4 ];
+	if [ $RECURSE = 4 ]; then
 		echo "No valid root device found. Please retry or provide a root path."
 		exit 1
 	fi
