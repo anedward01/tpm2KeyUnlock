@@ -23,6 +23,9 @@ The setup of TPM unlocking involves three phases. The first phase installs the T
 - General understanding of bash commands.
 - ~~Patience. Quite a bit of it~~ Not so much patience required anymore, just time.
 
+# Using cloud-init to automate deployment and installation
+I created an overview over at https://www.edwardssite.com/cloud-init outlining the details of how to automate the deployment and installation process of this project using cloud-init and Ubuntu's autoinstall settings. Pretty much everything needed is explained there, and reference files are included.
+
 # Post quarantine update
 Earlier in the year I received a request to continue developing the project. A lot of progress towards security and automation has been made. The project and its development has been allowed to keep its open source license, so I will leave the project up! As far as development goes, here are the major points:
 

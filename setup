@@ -95,7 +95,7 @@ else
 fi
 
 source /etc/profile
-for command in uuidgen openssl cert-to-efi-sig-list sign-efi-sig-list objcopy sbsign;do
+for command in uuidgen openssl cert-to-efi-sig-list sign-efi-sig-list objcopy sbsign; do
 	if ! command -v "${command}"; then
 		echo "Unable to find ${command}, bailing out!" >&1
 		exit 1
@@ -153,9 +153,21 @@ cp KEK.auth /boot/efi/EFI/BOOT/
 
 mokutil --import db.cer KEK.cer
 
-if [ "$ROOT" = '' ]; then
-	ROOT=/dev/mapper/$(ls /dev/mapper/ | grep -v "crypt control" | grep -Po "[A-Za-z0-9-]+vg[A-Za-z0-9-]+")
-fi
+RECURSE=0
+while [ "$ROOT" = '' ]; do
+	if [ $RECURSE = 4 ];
+		echo "No valid root device found. Please retry or provide a root path."
+		exit 1
+	fi
+	case "$RECURSE" in
+		0) ROOT=$(blkid | grep root | grep -Po '^/dev/mapper/[A-Za-z0-9-]') ;;
+		1) ROOT=/dev/mapper/$(ls /dev/mapper/ | grep root | grep -Po "[A-Za-z0-9-]+") ;;
+		2) ROOT=/dev/mapper/$(ls /dev/mapper/ | grep -v "crypt control" | grep -Po "[A-Za-z0-9-]+vg[A-Za-z0-9-]+") ;;
+		3) ROOT=/dev/mapper/$(ls /dev/mapper/ | grep -v "crypt control" | grep -Po "[A-Za-z0-9-]+root[A-Za-z0-9-]+") ;;
+	esac
+	((RECURSE++))
+done
+
 echo "root=$ROOT" > cmdline.txt
 
 objcopy \
