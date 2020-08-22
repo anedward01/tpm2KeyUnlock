@@ -9,7 +9,7 @@ fi
 
 # Pulls out the UUID of the EFI boot partition.
 BOOT=$(blkid | grep vfat | grep -v "UBUNTU" |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
-ROOT=$(blkid | grep -v "LVM" | grep -Po '^/dev/mapper/[A-Za-z0-9-]+')
+ROOT=$(lsblk -oMOUNTPOINT,NAME -P | grep 'MOUNTPOINT="/"' | grep -Po "(?<=NAME=\")[A-Za-z0-9-]+")
 # Pulls out the UUID of the LUKS encrypted drive.
 LUKS=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
 DRIVE=$(blkid | grep $LUKS | grep -Pow "^/[A-Za-z0-9/]+")
@@ -153,22 +153,7 @@ cp KEK.auth /boot/efi/EFI/BOOT/
 
 mokutil --import db.cer KEK.cer
 
-RECURSE=0
-while [ "$ROOT" = '' ]; do
-	if [ $RECURSE = 4 ]; then
-		echo "No valid root device found. Please retry or provide a root path."
-		exit 1
-	fi
-	case "$RECURSE" in
-		0) ROOT=$(blkid | grep root | grep -Po '^/dev/mapper/[A-Za-z0-9-]') ;;
-		1) ROOT=/dev/mapper/$(ls /dev/mapper/ | grep root | grep -Po "[A-Za-z0-9-]+") ;;
-		2) ROOT=/dev/mapper/$(ls /dev/mapper/ | grep -v "crypt control" | grep -Po "[A-Za-z0-9-]+vg[A-Za-z0-9-]+") ;;
-		3) ROOT=/dev/mapper/$(ls /dev/mapper/ | grep -v "crypt control" | grep -Po "[A-Za-z0-9-]+root[A-Za-z0-9-]+") ;;
-	esac
-	((RECURSE++))
-done
-
-echo "root=$ROOT" > cmdline.txt
+echo "root=$ROOT panic=60" > cmdline.txt
 
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
@@ -205,6 +190,8 @@ if  cd /etc/grub.d/; then
 else
 	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
 fi
+
+cp /etc/crypttab /etc/crypttab.bak
 
 systemctl enable tpm2keyunlock.service
 echo "TPM2 boot enabled, please restart. If you have GRUB, there will be a menu entry." >> /var/run/reboot-required

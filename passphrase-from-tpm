@@ -2,5 +2,5 @@
 set +e #I should probably keep this in for now.
 echo "Unlocking via TPM" >&2
 export TPM2TOOLS_TCTI="device:/dev/tpm0" || /lib/cryptsetup/askpass "Disk unlock fallback; enter passphrase for $CRYPTTAB_SOURCE ($CRYPTTAB_NAME): "
-/usr/local/bin/tpm2_unseal -c REFERENCE --auth pcr:HASH:0,2,3,7,8 || /usr/bin/tpm2_unseal -c REFERENCE --auth pcr:HASH:0,2,3,7,8 || /lib/cryptsetup/askpass "Disk unlock fallback; enter passphrase for $CRYPTTAB_SOURCE ($CRYPTTAB_NAME): "
+/usr/local/bin/tpm2_unseal -c REFERENCE --auth pcr:HASH:PCRVAL || /usr/bin/tpm2_unseal -c REFERENCE --auth pcr:HASH:PCRVAL || /lib/cryptsetup/askpass "Disk unlock fallback; enter passphrase for $CRYPTTAB_SOURCE ($CRYPTTAB_NAME): "
 

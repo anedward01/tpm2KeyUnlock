@@ -7,7 +7,7 @@ User=root
 WorkingDirectory=LOCATION
 ReadWriteDirectories=/
 TimeoutSec=180
-ExecStart=LOCATION/setup2
+ExecStart=LOCATION/tpm2PolicyConfig
 
 [Install]
 WantedBy=multi-user.target
