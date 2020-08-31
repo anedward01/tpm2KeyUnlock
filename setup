@@ -9,6 +9,9 @@ fi
 
 # Pulls out the UUID of the EFI boot partition.
 BOOT=$(blkid | grep vfat | grep -v "UBUNTU" |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
+EFIBOOT=$(lsblk -pno pkname $(lsblk -oMOUNTPOINT,NAME -Pp | grep 'MOUNTPOINT="/boot/efi"' | grep -Po "(?<=NAME=\")[A-Za-z0-9-/]+"))
+EFIPART=$(parted $EFIBOOT print | grep esp | awk '{print $1}')
+EFIORDER=$(efibootmgr | grep BootOrder | awk '{print $2}')
 ROOT=$(lsblk -oMOUNTPOINT,NAME -P | grep 'MOUNTPOINT="/"' | grep -Po "(?<=NAME=\")[A-Za-z0-9-]+")
 # Pulls out the UUID of the LUKS encrypted drive.
 LUKS=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
@@ -24,13 +27,18 @@ CONTINUE=''
 PASSWORD=''
 
 print_usage() {
-	echo -e "b: optional boot device location by UUID\nl: optional LUKS partition by UUID\np: cryptsetup password\nr: Provide optional root device.\ny: continue installation without prompts"
+	echo -e "B: Optional EFI boot device\nb: Optional boot device location by UUID"
+	echo -e "l: Optional LUKS partition by UUID\nP: Optional EFI boot partition"
+	echo -e "p: Cryptsetup password\nr: Provide optional root device."
+	echo -e "y: Continue installation without prompts"
 }
 
-while getopts "b:l:p:y" flag; do
+while getopts "B:b:l:P:p:y" flag; do
 	case "${flag}" in
+		B) EFIBOOT="${OPTARG}" ;;
 		b) BOOT="${OPTARG}" ;;
 		l) LUKS="${OPTARG}" ;;
+		P) EFIPART="${OPTARG}" ;;
 		p) PASSWORD="${OPTARG}" ;;
 		r) ROOT="${OPTARG}" ;;
 		y) CONTINUE="yes" ;;
@@ -68,9 +76,6 @@ apt-get install -y glib2.0 || (echo "Could not install glib2.0"; exit 1)
 chmod +x setup2 42_tpm
 cp tpm2keyunlock.service /etc/systemd/system/
 sed -i "s#LOCATION#$BASEDIR#g" /etc/systemd/system/tpm2keyunlock.service
-
-cp 42_tpm /etc/grub.d/ || echo "GRUB not found."
-sed -i "s/UUIDREPLACE/$BOOT/g" /etc/grub.d/42_tpm
 
 cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
@@ -183,16 +188,11 @@ cp /etc/crypttab ./
 sed -i "/$LUKS/s/none/\/usr\/local\/var\/tpm-manager\/secret.bin/g" crypttab
 sed -i "/$LUKS/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" crypttab
 
-if  cd /etc/grub.d/; then
-	sed -i "s/GRUB_DEFAULT=\"0\"/GRUB_DEFAULT=\"TPM\"/g" /etc/default/grub
-	sed -i "/GRUB\_DEFAULT\=/s/0/TPM/g" /etc/default/grub
-	update-grub
-else
-	(echo "Could not edit GRUB. You may have to manually add the TPM file to your bootloader.")
-fi
-
 cp /etc/crypttab /etc/crypttab.bak
 
+efibootmgr -c -L "TPM2 EFI Bootloader" -l "\\EFI\\BOOT\\BOOTX64.EFI" -d $EFIBOOT -p $EFIPART
+efibootmgr -o $(efibootmgr | grep "TPM2 EFI Bootloader" | grep -Po "(?<=Boot)[A-Za-z0-9]"),$EFIORDER
+
 systemctl enable tpm2keyunlock.service
-echo "TPM2 boot enabled, please restart. If you have GRUB, there will be a menu entry." >> /var/run/reboot-required
+echo "TPM2 boot enabled, please restart." >> /var/run/reboot-required
 cat /var/run/reboot-required

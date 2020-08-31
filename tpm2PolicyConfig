@@ -9,8 +9,7 @@ TPM_TEST=$(tpm2_pcrread sha256:0 | grep -Po "[0][x][A-Za-z0-9]+")
 PCR_BANK=1
 PCR_VALUES="0,2,3,7"
 
-SB_MOK=$(mokutil --sb-state)
-if [ $(echo $SB_MOK | grep -Po "[Dd]oesn't") = "" ]; then
+if [ $(echo $(mokutil --sb-state) | grep -Po "[Dd]oesn't") = "" ]; then
 	echo "Secure boot not supported. Using PCR 0, 2, 3, 7, 8."
 	PCR_VALUES="0,2,3,7,8"
 else
@@ -20,8 +19,8 @@ fi
 systemctl disable tpm2keyunlock.service
 
 chmod 0755 tpm2Hook passphrase-from-tpm
-cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2
-chown 0:0 /usr/share/initramfs-tools/hooks/tpm2
+cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2KeyUnlock
+chown 0:0 /usr/share/initramfs-tools/hooks/tpm2KeyUnlock
 cp passphrase-from-tpm /usr/local/bin/
 chown 0:0 /usr/local/bin/passphrase-from-tpm
 
@@ -31,9 +30,8 @@ chmod +x /etc/initramfs/post-update.d/bootChain-update
 
 cd /usr/local/var/tpm-manager || exit 1
 
-cp /etc/crypttab /etc/crypttab.bak
+
 cp /usr/local/var/tpm-manager/crypttab /etc/crypttab
-rm /usr/local/var/tpm-manager/crypttab
 
 if [[ $TPM_TEST = "" ]]; then
 	echo "TPM SHA 256 banks are disabled. To use SHA 256, enable SHA 256 PCR banks in BIOS with a compatible TPM."
@@ -55,8 +53,8 @@ tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
 tpm2_evictcontrol -c load.context
 
 sed -i "s/HASH/sha$PCR_BANK/g" /usr/local/bin/passphrase-from-tpm
-reference=$(tpm2_getcap handles-persistent | grep -Po "[0][x][A-Za-z0-9]+" | tail -1)
-sed -i "s/REFERENCE/$reference/g" /usr/local/bin/passphrase-from-tpm
+REFERENCE=$(tpm2_getcap handles-persistent | grep -Po "[0][x][A-Za-z0-9]+" | tail -1)
+sed -i "s/REFERENCE/$REFERENCE/g" /usr/local/bin/passphrase-from-tpm
 sed -i "s/PCRVAL/$PCR_VALUES/g" /usr/local/bin/passphrase-from-tpm
 
 update-initramfs -u
