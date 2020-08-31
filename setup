@@ -93,7 +93,7 @@ else
 fi
 
 if id tss;then
-	echo "User rss already exists, please check user details"
+	echo "User tss already exists, please check user details"
 else
 	useradd --system --user-group tss
 fi
@@ -189,7 +189,7 @@ sed -i "/$LUKS/s/$/\,keyscript\=\/usr\/local\/bin\/passphrase-from-tpm/g" cryptt
 
 cp /etc/crypttab /etc/crypttab.bak
 
-efibootmgr -c -L "TPM2 EFI Bootloader" -l "\\EFI\\BOOT\\BOOTX64.EFI" -d $EFIBOOT -p $EFIPART
+efibootmgr -c -L "TPM2 EFI Stub" -l "\\EFI\\BOOT\\BOOTX64.EFI" -d $EFIBOOT -p $EFIPART
 efibootmgr -o $(efibootmgr | grep "TPM2 EFI Stub" | grep -Po "(?<=Boot)[A-Za-z0-9]+"),$EFIORDER
 
 systemctl enable tpm2keyunlock.service
