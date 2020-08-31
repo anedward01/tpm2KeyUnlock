@@ -1,8 +1,0 @@
-#!/bin/sh
-exec tail -n +3 $0
-menuentry "TPM"{
-    insmod part_gpt
-    insmod chain
-    search --no-floppy --fs-uuid --set=root UUIDREPLACE
-    chainloader /EFI/BOOT/BOOTX64.EFI
-}
