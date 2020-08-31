@@ -7,3 +7,6 @@ copy_exec /usr/local/lib/libtss2-tcti-device.so
 copy_exec /usr/bin/tpm2_pcrevent
 copy_exec /usr/bin/sbverify
 copy_exec /usr/bin/tpm2_pcrread
+
+mkdir -p ${DESTDIR}/usr/local/var/bootChain/
+cp /usr/local/var/bootChain/db.crt ${DESTDIR}/usr/local/var/bootChain/

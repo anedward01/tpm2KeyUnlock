@@ -12,7 +12,7 @@ BOOT=$(blkid | grep vfat | grep -v "UBUNTU" |  grep -Po "(?<= UUID\=\")[A-Za-z0-
 EFIBOOT=$(lsblk -pno pkname $(lsblk -oMOUNTPOINT,NAME -Pp | grep 'MOUNTPOINT="/boot/efi"' | grep -Po "(?<=NAME=\")[A-Za-z0-9-/]+"))
 EFIPART=$(parted $EFIBOOT print | grep esp | awk '{print $1}')
 EFIORDER=$(efibootmgr | grep BootOrder | awk '{print $2}')
-ROOT=$(lsblk -oMOUNTPOINT,NAME -P | grep 'MOUNTPOINT="/"' | grep -Po "(?<=NAME=\")[A-Za-z0-9-]+")
+ROOT=$(lsblk -oMOUNTPOINT,NAME -Pp | grep '"/"' | grep -Po "(?<=NAME=\")[A-Za-z0-9-/]+")
 # Pulls out the UUID of the LUKS encrypted drive.
 LUKS=$(blkid | grep LUKS |  grep -Po "(?<= UUID\=\")[A-Za-z0-9-]+")
 DRIVE=$(blkid | grep $LUKS | grep -Pow "^/[A-Za-z0-9/]+")
