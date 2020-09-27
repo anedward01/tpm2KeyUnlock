@@ -2,10 +2,9 @@
 Description=TPM2 post-install manager
 
 [Service]
-Type=forking
 User=root
 WorkingDirectory=LOCATION
-ReadWriteDirectories=/
+ReadWriteDirectories=LOCATION
 TimeoutSec=180
 ExecStart=LOCATION/tpm2PolicyConfig
 
