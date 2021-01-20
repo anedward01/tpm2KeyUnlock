@@ -22,7 +22,7 @@ INITRD="$( sed -e 's#vmlinuz#initrd\.img#g' <<< "${LINUX}" )"
 # Grabs file location to append to tpm2keyunlock.service
 BASEDIR=$(pwd)
 # List of packages to install before compiling tpm2-tss
-PACKAGES=( 'autoconf-archive' 'm4' 'libgcrypt20-dev' 'libjson-c-dev' 'uuid-dev' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' 'tpm2-abrmd' 'tpm2-tools')
+PACKAGES=( 'autoconf-archive' 'm4' 'libgcrypt20-dev' 'libjson-c-dev' 'uuid-dev' 'libcmocka0' 'libcmocka-dev' 'build-essential' 'git' 'pkg-config' 'gcc' 'g++' 'm4' 'libtool' 'automake' 'autoconf' 'libdbus-glib-1-dev' 'libssl-dev' 'cmake' 'libssl-dev' 'libcurl4-gnutls-dev' 'doxygen' 'efitools' 'tpm2-abrmd' 'tpm2-tools' 'libltdl-dev')
 CONTINUE=''
 PASSWORD=''
 
