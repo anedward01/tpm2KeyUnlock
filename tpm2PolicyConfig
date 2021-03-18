@@ -7,7 +7,7 @@ fi
 
 TPM_TEST=$(tpm2_pcrread sha256:0 | grep -Po "[0][x][A-Za-z0-9]+")
 PCR_BANK=1
-PCR_VALUES="0,2,3,7,12"
+PCR_VALUES="0,2,3,7"
 
 systemctl disable tpm2keyunlock.service
 
