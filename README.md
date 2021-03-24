@@ -12,7 +12,7 @@ Main Source: https://threat.tevora.com/secure-boot-tpm-2/
   * -r: Manually sets the root partition under /dev/mapper/
   * -y Gives the script a clear go-ahead for signed kernel creation
 
-Once it finishes the first round, it will try to set up a GRUB menu entry. If the system does not use GRUB, it will continue running after giving a notice. Next, a `systemd` file will be added and enabled to run at boot. The `setup2` file will be enabled with execution rights as root and will run the TPM policy commands. The service will then disable itself after finishing setting up `/etc/crypttab` and `/usr/local/bin/passphrase-from-tpm` with the appropriate PCR hash method and persistent handle.
+Once it finishes the first round, it will try to set up a GRUB menu entry. If the system does not use GRUB, it will continue running after giving a notice. Next, a `systemd` file will be added and enabled to run at boot. The `tpm2keyunlock.service` file will be installed under /etc/systemd/system and run TPM commands to persist secret in memory. The service will then disable itself after finishing setting up `/etc/crypttab` and `/usr/local/bin/passphrase-from-tpm` with the appropriate PCR hash method and persistent handle.
 
 # Detailed walkthrough
 The setup of TPM unlocking involves three phases. The first phase installs the TPM tools. The second sets up a TPM-signed kernel and TPM key. The final step verifies the TPM key is working and finishes setting up the TPM kernel.
