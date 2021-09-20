@@ -33,7 +33,7 @@ print_usage() {
 	echo -e "y: Continue installation without prompts"
 }
 
-while getopts "B:b:l:P:p:y" flag; do
+while getopts "B:b:l:P:p:r:y" flag; do
 	case "${flag}" in
 		B) EFIBOOT="${OPTARG}" ;;
 		b) BOOT="${OPTARG}" ;;
