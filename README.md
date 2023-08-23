@@ -3,8 +3,19 @@ Adds automatic decryption function based on TPM policy configuration
 
 Main Source: https://threat.tevora.com/secure-boot-tpm-2/
 
-# Using the scripts
-`setup` automatically pulls out the LUKS and EFI boot partition using blkid and grep. The only input it requires is a `cryptsetup` password and a simple `yes`. The script supports flags as follows:
+# General requirements
+- A secure-boot enabled system with a custom key authentication setting in BIOS.
+- EFI System Partition (ESP) access for installing custom kernels.
+- General understanding of bash commands.
+- ~~Patience. Quite a bit of it~~ Not so much patience required anymore, just time.
+
+# Detailed Walkthrough
+## Prerequisites
+* An Ubuntu install during which [Encryption was Enabled](https://ubuntu.com/tutorials/install-ubuntu-desktop#7-optional-enable-encryption)
+* `Secure Boot` disabled in the BIOS (will be enabled after Step 1)
+
+## Step 1
+Run `./setup` as `root`, this will install the required packages and automatically pull the LUKS and EFI boot partition using blkid and grep. It will ask for confirmation to continue before modifying anything, then a password (and confirmation) that will be used for the `MOK Enrollment`, then the passphrase for your `LUKS` partition. The script supports flags as follows:
 
   * -b: Manually sets the boot partition by UUID
   * -l: Manually sets the LUKS partition by UUID
@@ -12,16 +23,15 @@ Main Source: https://threat.tevora.com/secure-boot-tpm-2/
   * -r: Manually sets the root partition under /dev/mapper/
   * -y Gives the script a clear go-ahead for signed kernel creation
 
-Once it finishes the first round, it will try to set up a GRUB menu entry. If the system does not use GRUB, it will continue running after giving a notice. Next, a `systemd` file will be added and enabled to run at boot. The `tpm2keyunlock.service` file will be installed under /etc/systemd/system and run TPM commands to persist secret in memory. The service will then disable itself after finishing setting up `/etc/crypttab` and `/usr/local/bin/passphrase-from-tpm` with the appropriate PCR hash method and persistent handle.
+As it finishes, it will set up a `MOK Enrollment` for secure boot. To complete this Step, the user must reboot (see Note below).
 
-# Detailed walkthrough
-The setup of TPM unlocking involves three phases. The first phase installs the TPM tools. The second sets up a TPM-signed kernel and TPM key. The final step verifies the TPM key is working and finishes setting up the TPM kernel.
+**Note**
+Upon rebooting, the user will be prompted with the `MOK Enrollment` blue screen.  Select `Enroll MOK`, then `Continue` followed by `Yes`, enter the password given during `setup`, finally select `Reboot`.
 
-# General requirements
-- A secure-boot enabled system with a custom key authentication setting in BIOS.
-- EFI System Partition (ESP) access for installing custom kernels.
-- General understanding of bash commands.
-- ~~Patience. Quite a bit of it~~ Not so much patience required anymore, just time.
+Once back in Ubuntu, reboot a second time, this time entering the BIOS to enable Secure Boot.
+
+## Step 2
+Now back in Ubuntu (with MOK Enrollment and Secure Boot enabled), run `./tpm2PolicyConfig` as root.  This will run TPM commands to persist the LUKS passphrase in memory by setting up `/etc/crypttab` and `/usr/local/bin/passphrase-from-tpm` with the appropriate PCR hash method and persistent handle.
 
 # Using cloud-init to automate deployment and installation
 I created an overview over at https://www.edwardssite.com/cloud-init outlining the details of how to automate the deployment and installation process of this project using cloud-init and Ubuntu's autoinstall settings. Pretty much everything needed is explained there, and reference files are included.

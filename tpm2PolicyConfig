@@ -9,8 +9,6 @@ TPM_TEST=$(tpm2_pcrread sha256:0 | grep -Po "[0][x][A-Za-z0-9]+")
 PCR_BANK=1
 PCR_VALUES="0,2,3,7"
 
-systemctl disable tpm2keyunlock.service
-
 chmod 0755 tpm2Hook passphrase-from-tpm
 cp tpm2Hook /usr/share/initramfs-tools/hooks/tpm2KeyUnlock
 chown 0:0 /usr/share/initramfs-tools/hooks/tpm2KeyUnlock
@@ -43,10 +41,9 @@ tpm2_createpolicy --policy-pcr -l sha$PCR_BANK:$PCR_VALUES -f pcrs.bin --policy 
 tpm2_createprimary -c primary.context
 tpm2_create -u obj.pub -r obj.priv -C primary.context -L policy.digest --attributes "noda|adminwithpolicy|fixedparent|fixedtpm" -i secret.bin
 tpm2_load -C primary.context -u obj.pub -r obj.priv -c load.context
-tpm2_evictcontrol -c load.context
+REFERENCE=$(tpm2_evictcontrol -c load.context | tee /dev/tty | grep "persistent-handle:" | cut -d' ' -sf2)
 
 sed -i "s/HASH/sha$PCR_BANK/g" /usr/local/bin/passphrase-from-tpm
-REFERENCE=$(tpm2_getcap handles-persistent | grep -Po "[0][x][A-Za-z0-9]+" | tail -1)
 sed -i "s/REFERENCE/$REFERENCE/g" /usr/local/bin/passphrase-from-tpm
 sed -i "s/PCRVAL/$PCR_VALUES/g" /usr/local/bin/passphrase-from-tpm
 

@@ -73,9 +73,6 @@ done
 
 apt-get install -y glib2.0 || (echo "Could not install glib2.0"; exit 1)
 
-cp tpm2keyunlock.service /etc/systemd/system/
-sed -i "s#LOCATION#$BASEDIR#g" /etc/systemd/system/tpm2keyunlock.service
-
 cd /usr/local/src || exit 1
 git clone https://github.com/tpm2-software/tpm2-tss.git
 
@@ -155,6 +152,7 @@ sign-efi-sig-list -g "$(< GUID.txt)" -k KEK.key -c KEK.crt db db.esl db.auth
 cp db.auth /boot/efi/EFI/BOOT/
 cp KEK.auth /boot/efi/EFI/BOOT/
 
+echo "Enter password for MOK Enrollment:"
 mokutil --import db.cer KEK.cer
 
 echo "root=$ROOT panic=60" > cmdline.txt
@@ -179,6 +177,7 @@ dd if=/dev/urandom of=secret.bin bs=32 count=1 conv=sync
 if [ "${PASSWORD}" != '' ]; then
 	echo $PASSWORD | cryptsetup luksAddKey $DRIVE secret.bin
 else
+	echo "Enter passphrase for the encrypted drive ($DRIVE):"
 	cryptsetup luksAddKey $DRIVE secret.bin
 fi
 
@@ -192,6 +191,5 @@ cp /etc/crypttab /etc/crypttab.bak
 efibootmgr -c -L "TPM2 EFI Stub" -l "\\EFI\\BOOT\\BOOTX64.EFI" -d $EFIBOOT -p $EFIPART
 efibootmgr -o $(efibootmgr | grep "TPM2 EFI Stub" | grep -Po "(?<=Boot)[A-Za-z0-9]+"),$EFIORDER
 
-systemctl enable tpm2keyunlock.service
 echo "TPM2 boot enabled, please restart." >> /var/run/reboot-required
 cat /var/run/reboot-required
